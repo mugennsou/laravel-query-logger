@@ -2,6 +2,7 @@
 
 namespace Mugennsou\LaravelQueryLogger\Subscribers;
 
+use Closure;
 use DateTimeInterface;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
@@ -72,6 +73,7 @@ class RecordQueryLogSubscriber
 
             $fullUrl = urldecode($event->request->fullUrl());
             $action  = empty($event->request->route()) ? '' : $event->request->route()->getAction('uses');
+            $action  = $action instanceof Closure ? 'Closure' : $action;
 
             $this->logs = sprintf(
                 "\n============ %s : %s ============\n\nACTION: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
