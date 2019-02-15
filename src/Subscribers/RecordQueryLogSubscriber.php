@@ -22,23 +22,22 @@ class RecordQueryLogSubscriber
     /**
      * @var string
      */
-    protected $logs;
+    protected $logs = '';
 
     /**
      * @var float
      */
-    protected $runtime;
+    protected $runtime = 0.0;
 
     /**
      * @var bool
      */
-    protected $enable;
+    protected $enable = false;
 
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->enable = config('app.debug') === true;
-        $this->clear();
     }
 
     /**
@@ -59,7 +58,7 @@ class RecordQueryLogSubscriber
     public function routeMatched(RouteMatched $event)
     {
         if ($this->enable) {
-            $this->enableQueryLog();
+            $this->prepare();
         }
     }
 
@@ -81,14 +80,13 @@ class RecordQueryLogSubscriber
             );
 
             $this->recordLogs();
-            $this->clear();
         }
     }
 
     public function commandStarting(CommandStarting $event)
     {
         if ($this->enable) {
-            $this->enableQueryLog();
+            $this->prepare();
         }
     }
 
@@ -103,16 +101,10 @@ class RecordQueryLogSubscriber
             );
 
             $this->recordLogs();
-            $this->clear();
         }
     }
 
-    protected function enableQueryLog(): void
-    {
-        DB::enableQueryLog();
-    }
-
-    protected function prepareQueryLogs()
+    protected function prepareQueryLogs(): void
     {
         foreach (DB::getQueryLog() as $query) {
             [$sql, $bindings, $time] = array_values($query);
@@ -126,15 +118,48 @@ class RecordQueryLogSubscriber
         }
     }
 
-    protected function recordLogs()
+    /**
+     * Prepare the query bindings for execution.
+     *
+     * @param  array $bindings
+     * @return array
+     */
+    protected function prepareBindings(array $bindings): array
+    {
+        foreach ($bindings as $key => $value) {
+            if ($value instanceof DateTimeInterface) {
+                $bindings[$key] = $value->format('Y-m-d H:i:s');
+            } elseif (is_bool($value)) {
+                $bindings[$key] = (int)$value;
+            }
+        }
+
+        return $bindings;
+    }
+
+    protected function prepare(): void
+    {
+        $this->clear();
+        $this->enableQueryLog();
+    }
+
+    protected function enableQueryLog(): void
+    {
+        DB::enableQueryLog();
+    }
+
+    protected function recordLogs(): void
     {
         $this->logger->debug($this->logs);
+
+        $this->clear();
     }
 
     protected function clear(): void
     {
         $this->clearLogs();
         $this->clearRuntime();
+        $this->flushQueryLog();
     }
 
     protected function clearLogs(): void
@@ -147,22 +172,8 @@ class RecordQueryLogSubscriber
         $this->runtime = 0.0;
     }
 
-    /**
-     * Prepare the query bindings for execution.
-     *
-     * @param  array $bindings
-     * @return array
-     */
-    protected function prepareBindings(array $bindings)
+    protected function flushQueryLog(): void
     {
-        foreach ($bindings as $key => $value) {
-            if ($value instanceof DateTimeInterface) {
-                $bindings[$key] = $value->format('Y-m-d H:i:s');
-            } elseif (is_bool($value)) {
-                $bindings[$key] = (int)$value;
-            }
-        }
-
-        return $bindings;
+        DB::flushQueryLog();
     }
 }
