@@ -4,13 +4,13 @@ namespace Mugennsou\LaravelQueryLogger\Subscribers;
 
 use Closure;
 use DateTimeInterface;
+use Psr\Log\LoggerInterface;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
-use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Http\Events\RequestHandled;
-use Illuminate\Routing\Events\RouteMatched;
-use Illuminate\Support\Facades\DB;
-use Psr\Log\LoggerInterface;
 
 class RecordQueryLogSubscriber
 {
@@ -71,8 +71,8 @@ class RecordQueryLogSubscriber
             $this->prepareQueryLogs();
 
             $fullUrl = urldecode($event->request->fullUrl());
-            $action  = empty($event->request->route()) ? '' : $event->request->route()->getAction('uses');
-            $action  = $action instanceof Closure ? 'Closure' : $action;
+            $action = empty($event->request->route()) ? '' : $event->request->route()->getAction('uses');
+            $action = $action instanceof Closure ? 'Closure' : $action;
 
             $this->logs = sprintf(
                 "\n============ %s : %s ============\n\nACTION: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
@@ -110,10 +110,10 @@ class RecordQueryLogSubscriber
             [$sql, $bindings, $time] = array_values($query);
 
             $sqlWithPlaceholders = str_replace(['%', '?'], ['%%', '%s'], $sql);
-            $bindings            = $this->prepareBindings($bindings);
-            $realSql             = vsprintf($sqlWithPlaceholders, $bindings);
+            $bindings = $this->prepareBindings($bindings);
+            $realSql = vsprintf($sqlWithPlaceholders, $bindings);
 
-            $this->logs    .= sprintf("[%s ms] %s\n", $time, $realSql);
+            $this->logs .= sprintf("[%s ms] %s\n", $time, $realSql);
             $this->runtime += $time;
         }
     }
@@ -130,7 +130,7 @@ class RecordQueryLogSubscriber
             if ($value instanceof DateTimeInterface) {
                 $bindings[$key] = $value->format('Y-m-d H:i:s');
             } elseif (is_bool($value)) {
-                $bindings[$key] = (int)$value;
+                $bindings[$key] = (int) $value;
             }
         }
 

@@ -2,9 +2,9 @@
 
 namespace Mugennsou\LaravelQueryLogger;
 
-use Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber;
 
 class QueryLoggerServiceProvider extends ServiceProvider
 {
