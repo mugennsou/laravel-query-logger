@@ -45,11 +45,11 @@ class RecordQueryLogSubscriber
      */
     public function subscribe(Dispatcher $events)
     {
-        $events->listen(RouteMatched::class, 'Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber@routeMatched');
-        $events->listen(RequestHandled::class, 'Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber@requestHandled');
+        $events->listen(RouteMatched::class, [$this, 'routeMatched']);
+        $events->listen(RequestHandled::class, [$this, 'requestHandled']);
 
-        $events->listen(CommandStarting::class, 'Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber@commandStarting');
-        $events->listen(CommandFinished::class, 'Mugennsou\LaravelQueryLogger\Subscribers\RecordQueryLogSubscriber@commandFinished');
+        $events->listen(CommandStarting::class, [$this, 'commandStarting']);
+        $events->listen(CommandFinished::class, [$this, 'commandFinished']);
     }
 
     /**
