@@ -4,13 +4,13 @@ namespace Mugennsou\LaravelQueryLogger\Subscribers;
 
 use Closure;
 use DateTimeInterface;
-use Psr\Log\LoggerInterface;
-use Illuminate\Events\Dispatcher;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\DB;
+use Psr\Log\LoggerInterface;
 
 class RecordQueryLogSubscriber
 {
