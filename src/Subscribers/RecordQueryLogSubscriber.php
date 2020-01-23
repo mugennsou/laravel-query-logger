@@ -37,6 +37,7 @@ class RecordQueryLogSubscriber
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
+
         $this->enable = config('app.debug') === true;
     }
 
@@ -45,11 +46,13 @@ class RecordQueryLogSubscriber
      */
     public function subscribe(Dispatcher $events)
     {
-        $events->listen(RouteMatched::class, [$this, 'routeMatched']);
-        $events->listen(RequestHandled::class, [$this, 'requestHandled']);
+        if ($this->enable) {
+            $events->listen(RouteMatched::class, [$this, 'routeMatched']);
+            $events->listen(RequestHandled::class, [$this, 'requestHandled']);
 
-        $events->listen(CommandStarting::class, [$this, 'commandStarting']);
-        $events->listen(CommandFinished::class, [$this, 'commandFinished']);
+            $events->listen(CommandStarting::class, [$this, 'commandStarting']);
+            $events->listen(CommandFinished::class, [$this, 'commandFinished']);
+        }
     }
 
     /**
@@ -57,9 +60,7 @@ class RecordQueryLogSubscriber
      */
     public function routeMatched(RouteMatched $event)
     {
-        if ($this->enable) {
-            $this->prepare();
-        }
+        $this->prepare();
     }
 
     /**
@@ -67,41 +68,44 @@ class RecordQueryLogSubscriber
      */
     public function requestHandled(RequestHandled $event)
     {
-        if ($this->enable) {
-            $this->prepareQueryLogs();
+        $this->prepareQueryLogs();
 
-            $fullUrl = urldecode($event->request->fullUrl());
-            $action = empty($event->request->route()) ? '' : $event->request->route()->getAction('uses');
-            $action = $action instanceof Closure ? 'Closure' : $action;
+        $fullUrl = urldecode($event->request->fullUrl());
+        $action = empty($event->request->route()) ? '' : $event->request->route()->getAction('uses');
+        $action = $action instanceof Closure ? 'Closure' : $action;
 
-            $this->logs = sprintf(
-                "\n============ %s : %s ============\n\nACTION: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
-                $event->request->method(), $fullUrl, $action, count(DB::getQueryLog()), $this->runtime, $this->logs
-            );
+        $this->logs = sprintf(
+            "\n============ %s : %s ============\n\nACTION: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
+            $event->request->method(),
+            $fullUrl,
+            $action,
+            count(DB::getQueryLog()),
+            $this->runtime,
+            $this->logs
+        );
 
-            $this->recordLogs();
-        }
+        $this->recordLogs();
     }
 
     public function commandStarting(CommandStarting $event)
     {
-        if ($this->enable) {
-            $this->prepare();
-        }
+        $this->prepare();
     }
 
     public function commandFinished(CommandFinished $event)
     {
-        if ($this->enable) {
-            $this->prepareQueryLogs();
+        $this->prepareQueryLogs();
 
-            $this->logs = sprintf(
-                "\n============ %s ============\n\nEXIT CODE: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
-                $event->command, $event->exitCode, count(DB::getQueryLog()), $this->runtime, $this->logs
-            );
+        $this->logs = sprintf(
+            "\n============ %s ============\n\nEXIT CODE: %s\nSQL COUNT: %s\nSQL RUNTIME: %s ms\n\n%s",
+            $event->command,
+            $event->exitCode,
+            count(DB::getQueryLog()),
+            $this->runtime,
+            $this->logs
+        );
 
-            $this->recordLogs();
-        }
+        $this->recordLogs();
     }
 
     protected function prepareQueryLogs(): void
@@ -120,8 +124,7 @@ class RecordQueryLogSubscriber
 
     /**
      * Prepare the query bindings for execution.
-     *
-     * @param  array $bindings
+     * @param array $bindings
      * @return array
      */
     protected function prepareBindings(array $bindings): array
@@ -140,6 +143,7 @@ class RecordQueryLogSubscriber
     protected function prepare(): void
     {
         $this->clear();
+
         $this->enableQueryLog();
     }
 
@@ -157,23 +161,8 @@ class RecordQueryLogSubscriber
 
     protected function clear(): void
     {
-        $this->clearLogs();
-        $this->clearRuntime();
-        $this->flushQueryLog();
-    }
-
-    protected function clearLogs(): void
-    {
         $this->logs = '';
-    }
-
-    protected function clearRuntime(): void
-    {
         $this->runtime = 0.0;
-    }
-
-    protected function flushQueryLog(): void
-    {
         DB::flushQueryLog();
     }
 }
